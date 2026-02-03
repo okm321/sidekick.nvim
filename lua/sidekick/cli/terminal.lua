@@ -322,12 +322,12 @@ function M:on_ready()
       next = next:gsub("\r\n", "\n") -- normalize line endings
       vim.schedule(function()
         if self:is_running() then
-          -- Use nvim_put to send input to the terminal
-          -- instead of nvim_chan_send to better simulate user input
-          -- vim.api.nvim_chan_send(self.job, next)
-          vim.api.nvim_buf_call(self.buf, function()
-            vim.api.nvim_put(vim.split(next, "\n", { plain = true }), "c", false, true)
-          end)
+          -- Use bracketed paste mode to send multi-line text correctly
+          -- This wraps the text in escape sequences that tell the terminal
+          -- to treat the input as pasted text, preserving newlines
+          local bracketed_paste_start = "\027[200~"
+          local bracketed_paste_end = "\027[201~"
+          vim.api.nvim_chan_send(self.job, bracketed_paste_start .. next .. bracketed_paste_end)
           if self:is_focused() then
             vim.cmd.startinsert()
           end
